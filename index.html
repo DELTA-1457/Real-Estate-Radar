@@ -75,7 +75,12 @@
                 const data = await response.json();
                 
                 if(data.status === "success") {
-                    scoreValue.innerText = data.score;
+                    // ถ้าคะแนนเกิน 100 ให้โชว์แค่ 100 ถ้าไม่ใช่ให้โชว์ตามจริง
+let displayScore = data.score > 100 ? 100 : data.score;
+// ถ้าคะแนนติดลบ ให้โชว์ 0
+displayScore = displayScore < 0 ? 0 : displayScore;
+
+scoreValue.innerText = displayScore;
                     if(data.score >= 80) {
                         statusText.innerText = "🔥 โคตรคุ้ม! ทรัพย์นี้ต่ำกว่าตลาด (Undervalued)";
                         statusText.className = "status-good";
@@ -99,3 +104,4 @@
     </script>
 </body>
 </html>
+
