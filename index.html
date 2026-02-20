@@ -3,105 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>เรดาร์สแกนอสังหาฯ (MVP)</title>
+    <title>Property Radar MVP</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
-        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        input, button { width: 100%; padding: 12px; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-size: 16px; }
-        button { background-color: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 20px; }
-        button:hover { background-color: #0056b3; }
-        .result-box { margin-top: 20px; padding: 20px; background: #eef2f5; border-radius: 8px; text-align: center; display: none; }
-        .score { font-size: 36px; font-weight: bold; color: #333; margin: 10px 0; }
-        .status-good { color: #28a745; font-weight: bold; }
-        .status-normal { color: #ffc107; font-weight: bold; }
+        body { font-family: 'Kanit', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 350px; }
+        h2 { text-align: center; color: #1a73e8; margin-bottom: 1.5rem; }
+        label { font-size: 0.9rem; color: #5f6368; }
+        input { width: 100%; padding: 10px; margin: 5px 0 15px; border: 1px solid #dadce0; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #1557b0; }
+        .result { margin-top: 20px; text-align: center; display: none; padding: 15px; background: #f8f9fa; border-radius: 10px; }
+        .score { font-size: 3rem; font-weight: bold; color: #202124; }
+        .status { font-weight: bold; margin-top: 5px; }
     </style>
 </head>
 <body>
-
     <div class="card">
-        <h2 style="text-align: center; margin-top: 0;">เรดาร์สแกนอสังหาฯ 🏢</h2>
-        <p style="text-align: center; color: #666; font-size: 14px;">ค้นหาทรัพย์ต่ำกว่าราคาตลาด</p>
+        <h2>Property Radar 🏢</h2>
+        <label>ราคาประกาศขาย (บาท)</label>
+        <input type="number" id="price" placeholder="เช่น 3000000">
         
-        <label>ราคาประกาศขาย (บาท):</label>
-        <input type="number" id="price" placeholder="เช่น 3500000">
+        <label>ขนาดพื้นที่ (ตร.ม.)</label>
+        <input type="number" id="sqm" placeholder="เช่น 30">
+        
+        <button onclick="scan()">สแกนความคุ้มค่า</button>
 
-        <label>ขนาดพื้นที่ (ตารางเมตร):</label>
-        <input type="number" id="sqm" placeholder="เช่น 35">
-
-        <button onclick="scanProperty()">สแกนความคุ้มค่า</button>
-
-        <div class="result-box" id="resultBox">
-            <p style="margin: 0; color: #666;">คะแนนความคุ้มค่า (Secret Score)</p>
-            <div class="score"><span id="scoreValue">-</span>/100</div>
-            <p id="statusText" style="margin: 0;"></p>
+        <div id="resultBox" class="result">
+            <div style="font-size: 0.8rem; color: #70757a;">คะแนนความคุ้มค่า</div>
+            <div class="score" id="score">0</div>
+            <div id="status" class="status"></div>
         </div>
     </div>
 
     <script>
-        async function scanProperty() {
+        async function scan() {
             const price = document.getElementById('price').value;
             const sqm = document.getElementById('sqm').value;
             const resultBox = document.getElementById('resultBox');
-            const scoreValue = document.getElementById('scoreValue');
-            const statusText = document.getElementById('statusText');
+            
+            if(!price || !sqm) return alert("กรุณากรอกข้อมูล");
 
-            if(!price || !sqm) {
-                alert("กรุณากรอกข้อมูลให้ครบถ้วน");
-                return;
-            }
-
-            // คำนวณราคาต่อตารางเมตรเพื่อส่งให้ Blackbox
             const pricePerSqm = price / sqm;
-
             resultBox.style.display = 'block';
-            scoreValue.innerText = "...";
-            statusText.innerText = "กำลังประมวลผลผ่าน AI...";
-            statusText.className = "";
+            document.getElementById('score').innerText = "...";
 
             try {
-                // *** ลิงก์ Ngrok ของคุณถูกใส่ไว้ตรงนี้เรียบร้อยแล้ว! ***
-                const backendUrl = "https://transisthmian-autoecious-tana.ngrok-free.dev/api/scan"; 
-                
-                const response = await fetch(backendUrl, {
-                    method: 'POST',
+                // ใช้ลิงก์ Ngrok เดิมของคุณ
+                const response = await fetch("https://transisthmian-autoecious-tana.ngrok-free.dev/api/scan", {
+                    method: "POST",
                     headers: { 
-                        'Content-Type': 'application/json',
-                        // บรรทัดนี้ช่วยให้ข้ามหน้าเตือนของ Ngrok ได้
-                        'ngrok-skip-browser-warning': 'true' 
+                        "Content-Type": "application/json",
+                        "ngrok-skip-browser-warning": "true"
                     },
                     body: JSON.stringify({ price: pricePerSqm })
                 });
 
                 const data = await response.json();
+                const score = data.score;
                 
-                if(data.status === "success") {
-                    // ถ้าคะแนนเกิน 100 ให้โชว์แค่ 100 ถ้าไม่ใช่ให้โชว์ตามจริง
-let displayScore = data.score > 100 ? 100 : data.score;
-// ถ้าคะแนนติดลบ ให้โชว์ 0
-displayScore = displayScore < 0 ? 0 : displayScore;
+                document.getElementById('score').innerText = score + "/100";
+                const status = document.getElementById('status');
 
-scoreValue.innerText = displayScore;
-                    if(data.score >= 80) {
-                        statusText.innerText = "🔥 โคตรคุ้ม! ทรัพย์นี้ต่ำกว่าตลาด (Undervalued)";
-                        statusText.className = "status-good";
-                    } else {
-                        statusText.innerText = "ธรรมดา ราคานี้หาได้ทั่วไป";
-                        statusText.className = "status-normal";
-                    }
+                if(score >= 80) {
+                    status.innerText = "🔥 คุ้มค่ามาก ต่ำกว่าราคาตลาด!";
+                    status.style.color = "#1e8e3e";
+                } else if(score >= 50) {
+                    status.innerText = "⚖️ ราคาเหมาะสมตามตลาด";
+                    status.style.color = "#f9ab00";
                 } else {
-                    scoreValue.innerText = "Error";
-                    statusText.innerText = "เกิดข้อผิดพลาด: " + data.message;
-                    statusText.style.color = "red";
+                    status.innerText = "⚠️ ราคาสูงกว่าตลาด";
+                    status.style.color = "#d93025";
                 }
-
-            } catch (error) {
-                console.error("Error:", error);
-                scoreValue.innerText = "Error";
-                statusText.innerText = "ยังไม่ได้เชื่อมต่อกับระบบหลังบ้าน (Python)";
-                statusText.style.color = "red";
+            } catch (e) {
+                alert("เชื่อมต่อหลังบ้านไม่ได้ เช็ค Ngrok หรือยัง?");
             }
         }
     </script>
 </body>
 </html>
-
